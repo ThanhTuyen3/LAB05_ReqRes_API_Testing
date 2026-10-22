@@ -1,38 +1,31 @@
-name: API Performance Monitor
+name: ReqRes Performance Monitor
 
 on:
   schedule:
-    - cron: '0 * * * *'   # chạy mỗi giờ
-  workflow_dispatch:       # cho phép chạy tay
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
-  monitor:
+  monitor-api:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Newman
         run: npm install -g newman
 
-      - name: Run Postman Collection
+      - name: Monitor API Availability and Performance
+        env:
+          API_KEY: ${{ secrets.REQRES_API_KEY }}
         run: |
-          newman run ReqRes.postman_collection.json \
-            -e ReqRes_Env.postman_environment.json \
-            -d users.csv \
-            --env-var "api_key=${{ secrets.REQRES_API_KEY }}" \
-            --reporters cli,junit \
-            --reporter-junit-export newman-results.xml
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: newman-report
-          path: newman-results.xml
+          newman run .github/workflows/monitor-collection.json \
+            --env-var "api-key=$API_KEY" \
+            --reporters cli
+mODNITOR
