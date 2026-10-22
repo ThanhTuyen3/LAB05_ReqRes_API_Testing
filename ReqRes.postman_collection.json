@@ -18,7 +18,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 201 or 429\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([201, 429]);\n});\n\npm.test(\"Name and Job are correct\", function () {\n    // Only run this test if the request was successful\n    if (pm.response.code === 201) {\n        var jsonData = pm.response.json();\n        pm.expect(jsonData.name).to.eql(\"An Nguyen\");\n        pm.expect(jsonData.job).to.eql(\"QA Lead\");\n        pm.environment.set(\"userId\", jsonData.id);\n    } else {\n        pm.expect(true).to.be.true; // Skip validation on error\n    }\n});"
+                  "pm.test(\"Status code is 201 or 429\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([201, 429]);\n});\n\npm.test(\"Name and Job are correct\", function () {\n    // Chỉ kiểm tra khi request thành công (201 Created)\n    if (pm.response.code === 201) {\n        var jsonData = pm.response.json();\n        // Dùng data.name và data.job để lấy động dữ liệu từ file users.csv\n        pm.expect(jsonData.name).to.eql(data.name);\n        pm.expect(jsonData.job).to.eql(data.job);\n        pm.environment.set(\"userId\", jsonData.id);\n    } else {\n        pm.expect(true).to.be.true; // Bỏ qua kiểm tra nếu bị giới hạn rate limit (429)\n    }\n});"
                 ]
               }
             }
