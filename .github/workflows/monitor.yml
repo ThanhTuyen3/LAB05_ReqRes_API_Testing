@@ -2,8 +2,8 @@ name: API Performance Monitor
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+    - cron: '0 * * * *'   # chạy mỗi giờ
+  workflow_dispatch:       # cho phép chạy tay
 
 jobs:
   monitor:
@@ -19,53 +19,20 @@ jobs:
           node-version: '20'
 
       - name: Install Newman
-        run: |
-          npm install -g newman
+        run: npm install -g newman
 
-      - name: Run Monitoring Request
+      - name: Run Postman Collection
         run: |
-          newman run - <<EOF
-          {
-            "info": {
-              "name": "ReqRes Monitor",
-              "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-            },
-            "item": [
-              {
-                "name": "Check Availability & Performance",
-                "event": [
-                  {
-                    "script": {
-                      "type": "text/javascript",
-                      "exec": [
-                        "pm.test(\"Status code is 200\", function () {",
-                        "    pm.response.to.have.status(200);",
-                        "});",
-                        "pm.test(\"Response time is less than 800ms\", function () {",
-                        "    pm.expect(pm.response.responseTime).to.be.below(800);",
-                        "});"
-                      ]
-                    },
-                    "listen": "test"
-                  }
-                ],
-                "request": {
-                  "method": "GET",
-                  "header": [],
-                  "url": {
-                    "raw": "https://reqres.in/api/users?page=1",
-                    "protocol": "https",
-                    "host": ["reqres", "in"],
-                    "path": ["api", "users"],
-                    "query": [
-                      {
-                        "key": "page",
-                        "value": "1"
-                      }
-                    ]
-                  }
-                }
-              }
-            ]
-          }
-          EOF
+          newman run ReqRes.postman_collection.json \
+            -e ReqRes_Env.postman_environment.json \
+            -d users.csv \
+            --env-var "api_key=${{ secrets.REQRES_API_KEY }}" \
+            --reporters cli,junit \
+            --reporter-junit-export newman-results.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: newman-results.xml
