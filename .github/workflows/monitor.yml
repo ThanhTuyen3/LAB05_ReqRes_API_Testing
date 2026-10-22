@@ -1,0 +1,71 @@
+name: API Performance Monitor
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Newman
+        run: |
+          npm install -g newman
+
+      - name: Run Monitoring Request
+        run: |
+          newman run - <<EOF
+          {
+            "info": {
+              "name": "ReqRes Monitor",
+              "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+            },
+            "item": [
+              {
+                "name": "Check Availability & Performance",
+                "event": [
+                  {
+                    "script": {
+                      "type": "text/javascript",
+                      "exec": [
+                        "pm.test(\"Status code is 200\", function () {",
+                        "    pm.response.to.have.status(200);",
+                        "});",
+                        "pm.test(\"Response time is less than 800ms\", function () {",
+                        "    pm.expect(pm.response.responseTime).to.be.below(800);",
+                        "});"
+                      ]
+                    },
+                    "listen": "test"
+                  }
+                ],
+                "request": {
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "https://reqres.in/api/users?page=1",
+                    "protocol": "https",
+                    "host": ["reqres", "in"],
+                    "path": ["api", "users"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+          EOF
